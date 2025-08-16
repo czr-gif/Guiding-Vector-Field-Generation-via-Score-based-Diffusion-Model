@@ -332,3 +332,50 @@ class CheckerboardSampleable(Sampleable):
             accept_mask = torch.logical_xor(~x_mask, y_mask)
             samples = torch.cat([samples, new_samples[accept_mask]], dim=0)
         return samples[:num_samples]
+    
+class InputdataSampleable(Sampleable):
+    """
+    Sampleable class for user-specified points (e.g., image edge points),
+    linearly scaled to a square [-bound, bound]^2.
+    """
+    def __init__(self, device: torch.device, points: torch.Tensor, shuffle: bool = True, bound: float = 4.0):
+        self.device = device
+        self.shuffle = shuffle
+        self.bound = bound
+
+        # 转到设备并缩放到 [-bound, bound]^2
+        points = points.to(device)
+        points = self.scale_points_to_bound(points, self.bound)
+        self.samples = points
+
+    @staticmethod
+    def scale_points_to_bound(points: torch.Tensor, bound: float) -> torch.Tensor:
+        """
+        Linearly scale and translate points to fit inside [-bound, bound]^2
+        """
+        min_vals = points.min(dim=0, keepdim=True)[0]
+        max_vals = points.max(dim=0, keepdim=True)[0]
+
+        ranges = max_vals - min_vals
+        ranges[ranges == 0] = 1.0  # 防止除以零
+
+        scaled = (points - min_vals) / ranges * (2 * bound) - bound
+        return scaled
+
+    @property
+    def dim(self) -> int:
+        return self.samples.shape[1]
+
+    def sample(self, num_samples: int) -> torch.Tensor:
+        N = self.samples.shape[0]
+        if num_samples >= N:
+            sampled = self.samples.clone()
+        else:
+            indices = torch.randperm(N, device=self.device)[:num_samples]
+            sampled = self.samples[indices]
+
+        if self.shuffle:
+            indices = torch.randperm(sampled.shape[0], device=self.device)
+            sampled = sampled[indices]
+
+        return sampled

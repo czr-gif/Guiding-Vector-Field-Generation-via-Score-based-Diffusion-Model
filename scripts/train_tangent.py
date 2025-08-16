@@ -16,7 +16,7 @@ from models.NNmodels import MLPScore , ConditionalScoreMatchingTrainer, TangentN
 from utils.device import get_device
 device = get_device()
 
-taskname = 'doublecircles'
+taskname = 'circle'
 
 ################################
 # 初始化模型
@@ -35,13 +35,13 @@ trainer = TangentNetTrainer(tangent_model, score_model, k=5, lr=1e-3, device=dev
 ################################
 # 训练 tangent 网络
 ################################
-num_steps = 5000
+num_steps = 10000
 batch_size = 512
 scale = PARAMS["scale"]
 losses = []
 for step in range(1, num_steps + 1):
     x = torch.empty(batch_size, 2).uniform_(-scale, scale).to(device)
-    loss, lu, ld = trainer.train_step(x)
+    loss, lu, lo, ld = trainer.train_step(x)
     losses.append(loss)
     if step % 100 == 0:
         print(f"[{step}] loss={loss:.4f} unit={lu:.4f} dir={ld:.4f}")

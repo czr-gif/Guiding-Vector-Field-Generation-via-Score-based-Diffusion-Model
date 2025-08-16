@@ -8,7 +8,7 @@ import torch
 import torch.distributions as D
 from core.schedules import *
 from core.paths import GaussianConditionalProbabilityPath, LinearConditionalProbabilityPath, UniformProbabilityPath
-from core.base_distributions import GaussianMixture,Gaussian,  MoonsSampleable, CirclesSampleable, UniformBox, SingleCircleSampleable
+from core.base_distributions import GaussianMixture,Gaussian,  MoonsSampleable, CirclesSampleable, UniformBox, SingleCircleSampleable, InputdataSampleable
 from utils.plotting import *
 from core.dynamics import ConditionalVectorFieldODE, ConditionalVectorFieldSDE, LearnedVectorFieldODE
 from core.simulators import EulerSimulator,EulerMaruyamaSimulator, record_every
@@ -17,9 +17,20 @@ import os
 from utils.device import get_device
 device = get_device()
 
-taskname = ''
+taskname = 'doublecircles'
 
-# device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+dirs_to_create = [
+    os.path.join("saved_model", taskname),
+    os.path.join("saved_figure", taskname)
+]
+
+for directory in dirs_to_create:
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+        print(f"Directory created: {directory}")
+    else:
+        print(f"Directory already exists: {directory}")
+
 PARAMS = {
     "scale": 5.0,
     "target_scale": 10.0,
@@ -32,7 +43,10 @@ if taskname == 'circle':
     p_data = sampler.sample(500)
 if taskname == 'doublecircles':
     p_data = CirclesSampleable(device)
-
+if taskname == 'westlake':
+    np_points = np.load('utils/westlake_edges.npy')
+    points_tensor = torch.tensor(np_points, dtype=torch.float32)
+    p_data = InputdataSampleable(device=device, points=points_tensor, shuffle=True, bound=4.0)
 
 # Construct conditional probability path
 path = UniformProbabilityPath(
@@ -45,9 +59,9 @@ path = UniformProbabilityPath(
 score_model = MLPScore(dim=2, hiddens=[64,64,64,64]).to(device)
 # Construct trainer
 trainer = ConditionalScoreMatchingTrainer(path, score_model)
-losses = trainer.train(num_epochs=8000, device=device, lr=1e-3, batch_size=1000)
+losses = trainer.train(num_epochs=10000, device=device, lr=1e-3, batch_size=1000)
 score_model.save('saved_model/' + taskname + '/score.pth')
-# score_model.load('circlescore.pth')
+# score_model.load('saved_model/' + taskname + '/score.pth')
 plot_losses(losses, taskname , title="Score Network Training Loss", save=True, smooth=True, method="ema", alpha=0.95)
 #######################
 # Change these values #

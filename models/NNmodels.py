@@ -194,65 +194,75 @@ class ConditionalScoreMatchingTrainer(Trainer):
         return loss
 
 class TangentNetTrainer:
-    def __init__(self, tangent_net, score_model, k=5, lr=1e-3, device='cuda'):
+    def __init__(self, tangent_net, score_model, k=5, lr=1e-3, device='cuda',
+                 lambda_unit=1.0, lambda_orth=1.0, lambda_dir=1.0):
         self.tangent_net = tangent_net.to(device)
         self.score_model = score_model.to(device)
         self.opt = torch.optim.Adam(self.tangent_net.parameters(), lr=lr)
         self.device = device
         self.k = k
+        self.lambda_unit = lambda_unit
+        self.lambda_orth = lambda_orth
+        self.lambda_dir = lambda_dir
 
     def preprocess_score_field(self, s_theta):
         """
-        按可视化时的方式缩放 score 场向量
+        缩放 score 场向量到可视化大小
         """
         norms = torch.norm(s_theta, dim=1, keepdim=True) + 1e-8
-        sc = torch.tanh(0.2 * norms)          # 限幅
-        return s_theta / norms * sc     # 缩放到合适大小
+        sc = torch.tanh(0.2 * norms)
+        return s_theta / norms * sc
 
     def compute_directional_consistency_loss(self, points: torch.Tensor, vectors: torch.Tensor):
         """
-        基于k近邻的方向一致性损失，鼓励邻居的向量方向相似
-        points: (N, 2) 位置
-        vectors: (N, 2) 混合向量（未归一化也没关系，函数内会归一化）
+        k近邻方向一致性
         """
-        unit_vecs = F.normalize(vectors, dim=1)  # 归一化方向向量
-        dists = torch.cdist(points, points)      # 欧式距离矩阵 (N, N)
-        knn_indices = dists.topk(k=self.k + 1, largest=False).indices[:, 1:]  # 排除自己
-        neighbors = unit_vecs[knn_indices]       # (N, k, 2)
-        center = unit_vecs.unsqueeze(1)          # (N, 1, 2)
-        cos_sim = F.cosine_similarity(center, neighbors, dim=-1)  # (N, k)
+        unit_vecs = F.normalize(vectors, dim=1)
+        dists = torch.cdist(points, points)
+        knn_indices = dists.topk(k=self.k + 1, largest=False).indices[:, 1:]
+        neighbors = unit_vecs[knn_indices]
+        center = unit_vecs.unsqueeze(1)
+        cos_sim = F.cosine_similarity(center, neighbors, dim=-1)
         loss = 1 - cos_sim.mean()
         return loss
 
     def compute_loss(self, x, t):
-        # 1. 获取 score 场并做可视化时的缩放处理
-        s_theta = self.score_model(x, t)         # (N, 2)
+        # 1️⃣ score 场
+        s_theta = self.score_model(x, t)
         s_theta = -self.preprocess_score_field(s_theta)
 
-        # 2. 获取 tangent 场
-        v_phi = self.tangent_net(x)              # (N, 2)
+        # 2️⃣ tangent 场
+        v_phi = self.tangent_net(x)
 
-        # 3. 混合向量场
+        # 3️⃣ 混合向量场
         m_field = s_theta + v_phi
 
-        # 4. 单位长度约束
+        # 4️⃣ 单位长度约束
         m_norm = torch.norm(m_field, dim=1) + 1e-8
-        loss_unit = torch.mean((m_norm - 1.0) ** 2)
+        loss_unit = ((m_norm - 1.0) ** 2).mean()
 
-        # 5. 方向一致性约束（基于邻居）
+        # 5️⃣ 正交约束
+        s_norm = F.normalize(s_theta, dim=1)
+        v_norm = F.normalize(v_phi, dim=1)
+        loss_orth = (torch.sum(s_norm * v_norm, dim=1) ** 2).mean()
+
+        # 6️⃣ 方向一致性
         loss_dir = self.compute_directional_consistency_loss(x, m_field)
 
-        return loss_unit + loss_dir, loss_unit.item(), loss_dir.item()
+        # 7️⃣ 总损失
+        total_loss = (self.lambda_unit * loss_unit +
+                      self.lambda_orth * loss_orth +
+                      self.lambda_dir * loss_dir)
+
+        return total_loss, loss_unit.item(), loss_orth.item(), loss_dir.item()
 
     def train_step(self, x):
-        # 固定 t = 1
         t = torch.ones(x.size(0), 1, device=self.device)
         self.opt.zero_grad()
-        loss, lu, ld = self.compute_loss(x, t)
+        loss, lu, lo, ld = self.compute_loss(x, t)
         loss.backward()
         self.opt.step()
-        return loss.item(), lu, ld
-
+        return loss.item(), lu, lo, ld
 
 
 
