@@ -5,8 +5,10 @@ import torch
 import torch.distributions as D
 from tqdm import tqdm
 import torch.nn.functional as F
+from utils.device import get_device
+device = get_device()
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+# device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 def build_mlp(dims: List[int], activation: Type[torch.nn.Module] = torch.nn.SiLU):
         mlp = []
         for idx in range(len(dims) - 1):

@@ -1,9 +1,10 @@
 from abc import ABC, abstractmethod
 import torch
 from core.paths import ConditionalProbabilityPath, GaussianConditionalProbabilityPath
+from utils.device import get_device
+device = get_device()
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
+# device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 class ODE(ABC):
     @abstractmethod
     def drift_coefficient(self, xt: torch.Tensor, t: torch.Tensor) -> torch.Tensor:

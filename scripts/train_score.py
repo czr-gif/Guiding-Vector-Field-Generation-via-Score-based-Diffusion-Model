@@ -14,10 +14,12 @@ from core.dynamics import ConditionalVectorFieldODE, ConditionalVectorFieldSDE, 
 from core.simulators import EulerSimulator,EulerMaruyamaSimulator, record_every
 from models.NNmodels import MLPScore , ConditionalScoreMatchingTrainer
 import os
+from utils.device import get_device
+device = get_device()
 
 taskname = 'doublecircles'
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+# device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 PARAMS = {
     "scale": 5.0,
     "target_scale": 10.0,

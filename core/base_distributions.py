@@ -4,8 +4,10 @@ import numpy as np
 import torch
 import torch.distributions as D
 from sklearn.datasets import make_moons, make_circles
+from utils.device import get_device
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+# device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = get_device()
 
 class Sampleable(ABC):
     """

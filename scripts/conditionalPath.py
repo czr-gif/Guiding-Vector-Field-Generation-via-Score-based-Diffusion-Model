@@ -13,8 +13,10 @@ from utils.plotting import *
 from core.dynamics import ConditionalVectorFieldODE, ConditionalVectorFieldSDE, LearnedVectorFieldODE
 from core.simulators import EulerSimulator,EulerMaruyamaSimulator, record_every
 from models.NNmodels import ConditionalFlowMatchingTrainer, MLPVectorField
+from utils.device import get_device
+device = get_device()
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+# device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 PARAMS = {
     "scale": 15.0,

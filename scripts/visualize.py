@@ -13,11 +13,13 @@ from utils.plotting import *
 from core.dynamics import ConditionalVectorFieldODE, ConditionalVectorFieldSDE, LearnedVectorFieldODE
 from core.simulators import EulerSimulator,EulerMaruyamaSimulator, record_every
 from models.NNmodels import MLPScore , ConditionalScoreMatchingTrainer, TangentNet, TangentNetTrainer
+from utils.device import get_device
+device = get_device()
 
 ################################
 # 初始化模型
 ################################
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+# device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 PARAMS = {"scale": 5.0}
 score_model = MLPScore(dim=2, hiddens=[64, 64, 64, 64])
 state = torch.load('circlescore.pth', map_location=device)

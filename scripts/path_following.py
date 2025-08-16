@@ -6,6 +6,8 @@ from core.schedules import *
 from utils.plotting import *
 from models.NNmodels import MLPScore, TangentNet
 from typing import Callable
+from utils.device import get_device
+device = get_device()
 
 taskname = 'doublecircles'
 
@@ -13,7 +15,7 @@ taskname = 'doublecircles'
 ################################
 # 初始化模型
 ################################
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+# device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 PARAMS = {"scale": 5.0}
 score_model = MLPScore(dim=2, hiddens=[64, 64, 64, 64])
 state = torch.load('saved_model/' + taskname + '/score.pth', map_location=device)
