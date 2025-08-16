@@ -17,7 +17,7 @@ import os
 from utils.device import get_device
 device = get_device()
 
-taskname = 'doublecircles'
+taskname = ''
 
 # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 PARAMS = {
@@ -26,10 +26,13 @@ PARAMS = {
     "target_std": 1.0,
 }
 
-# 初始化采样器：圆半径为3，圆心在 (0,0)，采样点打乱
-# sampler = SingleCircleSampleable(device=device, radius=3.0)
-# p_data = sampler.sample(500)
-p_data = CirclesSampleable(device)
+# 初始化采样器
+if taskname == 'circle':
+    sampler = SingleCircleSampleable(device=device, radius=3.0)
+    p_data = sampler.sample(500)
+if taskname == 'doublecircles':
+    p_data = CirclesSampleable(device)
+
 
 # Construct conditional probability path
 path = UniformProbabilityPath(
