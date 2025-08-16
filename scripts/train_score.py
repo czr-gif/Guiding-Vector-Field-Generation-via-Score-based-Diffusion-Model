@@ -13,6 +13,9 @@ from utils.plotting import *
 from core.dynamics import ConditionalVectorFieldODE, ConditionalVectorFieldSDE, LearnedVectorFieldODE
 from core.simulators import EulerSimulator,EulerMaruyamaSimulator, record_every
 from models.NNmodels import MLPScore , ConditionalScoreMatchingTrainer
+import os
+
+taskname = 'doublecircles'
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 PARAMS = {
@@ -24,7 +27,7 @@ PARAMS = {
 # 初始化采样器：圆半径为3，圆心在 (0,0)，采样点打乱
 # sampler = SingleCircleSampleable(device=device, radius=3.0)
 # p_data = sampler.sample(500)
-p_data = SingleCircleSampleable(device,radius=3.0)
+p_data = CirclesSampleable(device)
 
 # Construct conditional probability path
 path = UniformProbabilityPath(
@@ -36,18 +39,17 @@ path = UniformProbabilityPath(
 # Construct learnable vector field
 score_model = MLPScore(dim=2, hiddens=[64,64,64,64]).to(device)
 # Construct trainer
-# trainer = ConditionalScoreMatchingTrainer(path, score_model)
-# losses = trainer.train(num_epochs=8000, device=device, lr=1e-3, batch_size=1000)
-# score_model.save('circlescore.pth')
-score_model.load('circlescore.pth')
-
+trainer = ConditionalScoreMatchingTrainer(path, score_model)
+losses = trainer.train(num_epochs=8000, device=device, lr=1e-3, batch_size=1000)
+score_model.save('saved_model/' + taskname + '/score.pth')
+# score_model.load('circlescore.pth')
+plot_losses(losses, taskname , title="Score Network Training Loss", save=True, smooth=True, method="ema", alpha=0.95)
 #######################
 # Change these values #
 #######################
 num_samples = 1000
 num_timesteps = 1000
 num_marginals = 3
-
 
 ##############
 # Setup Plot #
@@ -84,5 +86,6 @@ ax.legend(fontsize=legend_size, markerscale=markerscale)
 ax.set_xlim(x_bounds)
 ax.set_ylim(y_bounds)
 ax.grid(True)
+plt.savefig('saved_figure/' + taskname + '/score.pdf', format = 'pdf', dpi=300)
 plt.tight_layout()
-# plt.show()
+plt.show()

@@ -161,7 +161,7 @@ class Trainer(ABC):
             losses.append(loss.item())
         # Finish
         self.model.eval()
-        return loss
+        return losses
 
 class ConditionalFlowMatchingTrainer(Trainer):
     def __init__(self, path: ConditionalProbabilityPath, model: MLPVectorField, **kwargs):

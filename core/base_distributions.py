@@ -226,7 +226,7 @@ class CirclesSampleable(Sampleable):
     """
     Implementation of concentric circle distribution using sklearn's make_circles
     """
-    def __init__(self, device: torch.device, noise: float = 0.05, scale=5.0, offset: Optional[torch.Tensor] = None):
+    def __init__(self, device: torch.device, noise: float = 0.05, scale=4.0, offset: Optional[torch.Tensor] = None):
         """
         Args:
             noise: standard deviation of Gaussian noise added to the data
