@@ -379,3 +379,61 @@ class InputdataSampleable(Sampleable):
             sampled = sampled[indices]
 
         return sampled
+
+class TwoTrianglesSampleable(Sampleable):
+    """
+    Uniform sampling along the edges of two triangles in 2D, with optional Gaussian noise.
+    """
+    def __init__(self, device: torch.device, shuffle: bool = True, noise_std: float = 0.05):
+        self.device = device
+        self.shuffle = shuffle
+        self.noise_std = noise_std
+        # 三角形顶点
+        self.tri1 = torch.tensor([[-4., -3.], [-4., 3.], [1., 3.]], device=device)
+        self.tri2 = torch.tensor([[-1., -3.], [4., -3.], [4., 3.]], device=device)
+
+    @property
+    def dim(self) -> int:
+        return 2
+
+    def sample_triangle_edges(self, tri: torch.Tensor, points_per_edge: int) -> torch.Tensor:
+        """
+        Sample points uniformly along the three edges of a triangle.
+        """
+        edges = [(tri[0], tri[1]), (tri[1], tri[2]), (tri[2], tri[0])]
+        samples_list = []
+        for p0, p1 in edges:
+            t = torch.linspace(0, 1, points_per_edge, device=self.device).unsqueeze(1)
+            samples = (1 - t) * p0 + t * p1
+            samples_list.append(samples)
+        return torch.cat(samples_list, dim=0)
+
+    def sample(self, num_samples: int) -> torch.Tensor:
+        """
+        Sample a total of `num_samples` points along all edges of the two triangles,
+        with optional Gaussian noise.
+        """
+        # 每个三角形每条边分配的点数
+        points_per_edge = max(1, num_samples // (2 * 3))  # 2 triangles × 3 edges
+        s1 = self.sample_triangle_edges(self.tri1, points_per_edge)
+        s2 = self.sample_triangle_edges(self.tri2, points_per_edge)
+        samples = torch.cat([s1, s2], dim=0)
+
+        # 如果需要更多或更少点，随机裁剪或重复
+        if samples.shape[0] > num_samples:
+            indices = torch.randperm(samples.shape[0], device=self.device)[:num_samples]
+            samples = samples[indices]
+        elif samples.shape[0] < num_samples:
+            repeat = (num_samples + samples.shape[0] - 1) // samples.shape[0]
+            samples = samples.repeat(repeat, 1)[:num_samples]
+
+        if self.shuffle:
+            indices = torch.randperm(samples.shape[0], device=self.device)
+            samples = samples[indices]
+
+        # 添加噪声
+        if self.noise_std > 0:
+            noise = torch.randn_like(samples) * self.noise_std
+            samples = samples + noise
+
+        return samples

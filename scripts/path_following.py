@@ -9,7 +9,7 @@ from typing import Callable
 from utils.device import get_device
 device = get_device()
 
-taskname = 'doublecircles'
+taskname = 'Triangles'
 
 
 ################################
@@ -84,7 +84,7 @@ def integrate_fields(
 
 
 x0_list = [torch.tensor([[4.0, -4.0]], dtype=torch.float32),
-           torch.tensor([[1.0, 0.0]], dtype=torch.float32)]
+           torch.tensor([[-4.5, 0.0]], dtype=torch.float32)]
 
 traj_list = []
 

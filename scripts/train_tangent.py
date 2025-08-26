@@ -16,7 +16,7 @@ from models.NNmodels import MLPScore , ConditionalScoreMatchingTrainer, TangentN
 from utils.device import get_device
 device = get_device()
 
-taskname = 'doublecircles'
+taskname = 'Triangles'
 
 ################################
 # 初始化模型
@@ -30,13 +30,14 @@ score_model.to(device)
 score_model.eval()
 
 tangent_model = TangentNet(hidden=128)
-trainer = TangentNetTrainer(tangent_model, score_model, k=5, lr=1e-3, device=device)
+trainer = TangentNetTrainer(tangent_model, score_model, k=5, lr=1e-3, device=device,
+                 lambda_unit=1.0, lambda_orth=1.0, lambda_dir=1.0)
 
 ################################
 # 训练 tangent 网络
 ################################
 num_steps = 10000
-batch_size = 512
+batch_size = 512 * 2
 scale = PARAMS["scale"]
 losses = []
 for step in range(1, num_steps + 1):

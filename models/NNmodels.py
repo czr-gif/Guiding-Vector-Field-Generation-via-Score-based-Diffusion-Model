@@ -225,6 +225,23 @@ class TangentNetTrainer:
         cos_sim = F.cosine_similarity(center, neighbors, dim=-1)
         loss = 1 - cos_sim.mean()
         return loss
+    
+    def compute_divergence(self, x, m_field):
+        """
+        x: (N, 2)
+        m_field: (N, 2)
+        Returns approximate divergence at sampled points
+        """
+        # 简单 finite difference，N个点与k近邻
+        dists = torch.cdist(x, x)
+        knn_idx = dists.topk(k=self.k+1, largest=False).indices[:, 1:]  # 排除自己
+        neighbor_pos = x[knn_idx]      # (N, k, 2)
+        neighbor_vec = m_field[knn_idx] # (N, k, 2)
+        diff_pos = neighbor_pos - x.unsqueeze(1)      # (N, k, 2)
+        diff_vec = neighbor_vec - m_field.unsqueeze(1) # (N, k, 2)
+        # div ~ sum_i (delta v / delta x)
+        div_est = (diff_vec * diff_pos).sum(-1) / (diff_pos.norm(dim=-1)+1e-8)  # (N, k)
+        return div_est.mean(dim=1)  # (N,)
 
     def compute_loss(self, x, t):
         # 1️⃣ score 场
@@ -251,8 +268,8 @@ class TangentNetTrainer:
 
         # 7️⃣ 总损失
         total_loss = (self.lambda_unit * loss_unit +
-                      self.lambda_orth * loss_orth +
-                      self.lambda_dir * loss_dir)
+              self.lambda_orth * loss_orth +
+              self.lambda_dir * loss_dir )
 
         return total_loss, loss_unit.item(), loss_orth.item(), loss_dir.item()
 
