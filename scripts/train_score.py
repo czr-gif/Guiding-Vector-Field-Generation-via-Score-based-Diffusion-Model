@@ -39,8 +39,8 @@ PARAMS = {
 
 # 初始化采样器
 if taskname == 'circle':
-    sampler = SingleCircleSampleable(device=device, radius=3.0)
-    p_data = sampler.sample(500)
+    p_data = SingleCircleSampleable(device=device, radius=3.0)
+    # p_data = sampler.sample(500)
 if taskname == 'doublecircles':
     p_data = CirclesSampleable(device)
 if taskname == 'westlake':
