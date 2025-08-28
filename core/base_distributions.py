@@ -380,46 +380,162 @@ class InputdataSampleable(Sampleable):
 
         return sampled
 
-class TwoTrianglesSampleable(Sampleable):
+class TwoPolygonsSampleable(Sampleable):
     """
-    Uniform sampling along the edges of two triangles in 2D, with optional Gaussian noise.
+    Uniform sampling along the edges of two polygons in 2D, with optional Gaussian noise.
     """
     def __init__(self, device: torch.device, shuffle: bool = True, noise_std: float = 0.05):
         self.device = device
         self.shuffle = shuffle
         self.noise_std = noise_std
-        # 三角形顶点
-        self.tri1 = torch.tensor([[-4., -3.], [-4., 3.], [1., 3.]], device=device)
-        self.tri2 = torch.tensor([[-1., -3.], [4., -3.], [4., 3.]], device=device)
+        # 多边形顶点（首尾相接）
+        self.poly1 = torch.tensor([[-4., 4.], [-1., 4.], [-1., 3.], [-3., 3.], [-3., -4.], [-4., -4.]], device=device)
+        self.poly2 = torch.tensor([[4., 4.], [3., 4.], [3., -3.], [1., -3.], [1., -4.], [4., -4.]], device=device)
 
     @property
     def dim(self) -> int:
         return 2
 
-    def sample_triangle_edges(self, tri: torch.Tensor, points_per_edge: int) -> torch.Tensor:
+    def sample_polygon_edges(self, poly: torch.Tensor, points_per_edge: int) -> torch.Tensor:
         """
-        Sample points uniformly along the three edges of a triangle.
+        Sample points uniformly along the edges of a polygon.
+        poly: (N, 2), closed polygon (首尾相接)
         """
-        edges = [(tri[0], tri[1]), (tri[1], tri[2]), (tri[2], tri[0])]
+        n = poly.shape[0]
         samples_list = []
-        for p0, p1 in edges:
+        for i in range(n):
+            p0, p1 = poly[i], poly[(i+1) % n]  # wrap around
             t = torch.linspace(0, 1, points_per_edge, device=self.device).unsqueeze(1)
-            samples = (1 - t) * p0 + t * p1
-            samples_list.append(samples)
+            edge_samples = (1 - t) * p0 + t * p1
+            samples_list.append(edge_samples)
         return torch.cat(samples_list, dim=0)
 
     def sample(self, num_samples: int) -> torch.Tensor:
         """
-        Sample a total of `num_samples` points along all edges of the two triangles,
+        Sample a total of `num_samples` points along all edges of the two polygons,
         with optional Gaussian noise.
         """
-        # 每个三角形每条边分配的点数
-        points_per_edge = max(1, num_samples // (2 * 3))  # 2 triangles × 3 edges
-        s1 = self.sample_triangle_edges(self.tri1, points_per_edge)
-        s2 = self.sample_triangle_edges(self.tri2, points_per_edge)
+        # 每个多边形的边数
+        num_edges_total = self.poly1.shape[0] + self.poly2.shape[0]
+        points_per_edge = max(1, num_samples // num_edges_total)
+
+        s1 = self.sample_polygon_edges(self.poly1, points_per_edge)
+        s2 = self.sample_polygon_edges(self.poly2, points_per_edge)
         samples = torch.cat([s1, s2], dim=0)
 
-        # 如果需要更多或更少点，随机裁剪或重复
+        # 调整数量
+        if samples.shape[0] > num_samples:
+            indices = torch.randperm(samples.shape[0], device=self.device)[:num_samples]
+            samples = samples[indices]
+        elif samples.shape[0] < num_samples:
+            repeat = (num_samples + samples.shape[0] - 1) // samples.shape[0]
+            samples = samples.repeat(repeat, 1)[:num_samples]
+
+        # 打乱
+        if self.shuffle:
+            indices = torch.randperm(samples.shape[0], device=self.device)
+            samples = samples[indices]
+
+        # 添加噪声
+        if self.noise_std > 0:
+            noise = torch.randn_like(samples) * self.noise_std
+            samples = samples + noise
+
+        return samples
+
+
+class TwoCirclesSampleable(Sampleable):
+    """
+    Uniform sampling along the circumferences of two circles in 2D, with optional Gaussian noise.
+    """
+    def __init__(self, device: torch.device, shuffle: bool = True, noise_std: float = 0.05):
+        self.device = device
+        self.shuffle = shuffle
+        self.noise_std = noise_std
+        # 两个圆的圆心和半径
+        self.centers = torch.tensor([[2.0, 0.0], [-2.0, 0.0]], device=device)
+        self.radius = 1.5
+
+    @property
+    def dim(self) -> int:
+        return 2
+
+    def sample_circle(self, center: torch.Tensor, num_points: int) -> torch.Tensor:
+        """
+        Sample points uniformly along the circumference of a circle.
+        """
+        theta = torch.linspace(0, 2 * torch.pi, num_points + 1, device=self.device)[:-1]
+        x = torch.cos(theta) * self.radius + center[0]
+        y = torch.sin(theta) * self.radius + center[1]
+        return torch.stack([x, y], dim=1)
+
+    def sample(self, num_samples: int) -> torch.Tensor:
+        """
+        Sample a total of `num_samples` points along the circumferences of two circles.
+        """
+        # 每个圆分配的点数
+        points_per_circle = max(1, num_samples // 2)
+
+        s1 = self.sample_circle(self.centers[0], points_per_circle)
+        s2 = self.sample_circle(self.centers[1], points_per_circle)
+        samples = torch.cat([s1, s2], dim=0)
+
+        # 调整数量
+        if samples.shape[0] > num_samples:
+            indices = torch.randperm(samples.shape[0], device=self.device)[:num_samples]
+            samples = samples[indices]
+        elif samples.shape[0] < num_samples:
+            repeat = (num_samples + samples.shape[0] - 1) // samples.shape[0]
+            samples = samples.repeat(repeat, 1)[:num_samples]
+
+        # 打乱
+        if self.shuffle:
+            indices = torch.randperm(samples.shape[0], device=self.device)
+            samples = samples[indices]
+
+        # 添加噪声
+        if self.noise_std > 0:
+            noise = torch.randn_like(samples) * self.noise_std
+            samples = samples + noise
+
+        return samples
+    
+class SquareSampleable(Sampleable):
+    """
+    Uniform sampling along the edges of a square in 2D, without interior points.
+    """
+    def __init__(self, device: torch.device, shuffle: bool = True, noise_std: float = 0.0):
+        self.device = device
+        self.shuffle = shuffle
+        self.noise_std = noise_std
+        # 定义正方形顶点，顺时针或逆时针，首尾相接
+        edge = 3.
+        self.square = torch.tensor([
+            [-edge, -edge],
+            [-edge, edge],
+            [edge, edge],
+            [edge, -edge]
+        ], device=device)
+
+    @property
+    def dim(self) -> int:
+        return 2
+
+    def sample_square_edges(self, points_per_edge: int) -> torch.Tensor:
+        n = self.square.shape[0]
+        samples_list = []
+        for i in range(n):
+            p0, p1 = self.square[i], self.square[(i+1) % n]
+            t = torch.linspace(0, 1, points_per_edge, device=self.device).unsqueeze(1)
+            edge_samples = (1 - t) * p0 + t * p1
+            samples_list.append(edge_samples)
+        return torch.cat(samples_list, dim=0)
+
+    def sample(self, num_samples: int) -> torch.Tensor:
+        points_per_edge = max(1, num_samples // 4)
+        samples = self.sample_square_edges(points_per_edge)
+
+        # 如果样本数量不足或过多，裁剪或重复
         if samples.shape[0] > num_samples:
             indices = torch.randperm(samples.shape[0], device=self.device)[:num_samples]
             samples = samples[indices]
@@ -431,7 +547,66 @@ class TwoTrianglesSampleable(Sampleable):
             indices = torch.randperm(samples.shape[0], device=self.device)
             samples = samples[indices]
 
-        # 添加噪声
+        if self.noise_std > 0:
+            noise = torch.randn_like(samples) * self.noise_std
+            samples = samples + noise
+
+        return samples
+
+class Star5Sampleable(Sampleable):
+    """
+    Uniform sampling along the edges of a 5-pointed star in 2D, without interior points.
+    """
+    def __init__(self, device: torch.device, shuffle: bool = True, noise_std: float = 0.0):
+        self.device = device
+        self.shuffle = shuffle
+        self.noise_std = noise_std
+        
+        # 五角星顶点，逆时针顺序连接形成闭合边
+        R = 4.0  # 外接圆半径
+        r = R * 0.382  # 内接圆半径（黄金比例）
+        angles_outer = torch.linspace(0, 2 * torch.pi, 6)[:-1]  # 5个外顶点角度
+        angles_inner = angles_outer + torch.pi / 5  # 5个内顶点角度
+
+        outer_pts = torch.stack([R * torch.cos(angles_outer), R * torch.sin(angles_outer)], dim=1)
+        inner_pts = torch.stack([r * torch.cos(angles_inner), r * torch.sin(angles_inner)], dim=1)
+
+        # 交替排列外顶点和内顶点
+        pts = torch.empty((10, 2), device=device)
+        pts[0::2] = outer_pts
+        pts[1::2] = inner_pts
+        self.star = pts
+
+    @property
+    def dim(self) -> int:
+        return 2
+
+    def sample_star_edges(self, points_per_edge: int) -> torch.Tensor:
+        n = self.star.shape[0]
+        samples_list = []
+        for i in range(n):
+            p0, p1 = self.star[i], self.star[(i+1) % n]  # wrap-around
+            t = torch.linspace(0, 1, points_per_edge, device=self.device).unsqueeze(1)
+            edge_samples = (1 - t) * p0 + t * p1
+            samples_list.append(edge_samples)
+        return torch.cat(samples_list, dim=0)
+
+    def sample(self, num_samples: int) -> torch.Tensor:
+        points_per_edge = max(1, num_samples // 10)  # 10条边
+        samples = self.sample_star_edges(points_per_edge)
+
+        # 调整样本数量
+        if samples.shape[0] > num_samples:
+            indices = torch.randperm(samples.shape[0], device=self.device)[:num_samples]
+            samples = samples[indices]
+        elif samples.shape[0] < num_samples:
+            repeat = (num_samples + samples.shape[0] - 1) // samples.shape[0]
+            samples = samples.repeat(repeat, 1)[:num_samples]
+
+        if self.shuffle:
+            indices = torch.randperm(samples.shape[0], device=self.device)
+            samples = samples[indices]
+
         if self.noise_std > 0:
             noise = torch.randn_like(samples) * self.noise_std
             samples = samples + noise

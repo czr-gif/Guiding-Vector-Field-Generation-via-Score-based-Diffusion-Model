@@ -213,18 +213,59 @@ class TangentNetTrainer:
         sc = torch.tanh(0.2 * norms)
         return s_theta / norms * sc
 
-    def compute_directional_consistency_loss(self, points: torch.Tensor, vectors: torch.Tensor):
+    # def compute_directional_consistency_loss(self, points: torch.Tensor, vectors: torch.Tensor):
+    #     """
+    #     k近邻方向一致性
+    #     """
+    #     unit_vecs = F.normalize(vectors, dim=1)
+    #     dists = torch.cdist(points, points)
+    #     knn_indices = dists.topk(k=self.k + 1, largest=False).indices[:, 1:]
+    #     neighbors = unit_vecs[knn_indices]
+    #     center = unit_vecs.unsqueeze(1)
+    #     cos_sim = F.cosine_similarity(center, neighbors, dim=-1)
+    #     loss = 1 - cos_sim.mean()
+    #     return loss
+    def compute_directional_consistency_loss(self, points: torch.Tensor, vectors: torch.Tensor, 
+                                         k=10, noise_std=0.1, lambda_div=1.0):
         """
-        k近邻方向一致性
+        对每个点，在其附近加噪声生成 k 个邻居点，计算方向一致性 + 梯度约束（抑制源/汇）。
+        Vectorized version for faster training.
+
+        points: (N, 2)
+        vectors: (N, 2)
+        k: 每个点生成的邻居点数量
+        noise_std: 邻居噪声标准差
+        lambda_div: 梯度约束权重
         """
-        unit_vecs = F.normalize(vectors, dim=1)
-        dists = torch.cdist(points, points)
-        knn_indices = dists.topk(k=self.k + 1, largest=False).indices[:, 1:]
-        neighbors = unit_vecs[knn_indices]
-        center = unit_vecs.unsqueeze(1)
-        cos_sim = F.cosine_similarity(center, neighbors, dim=-1)
-        loss = 1 - cos_sim.mean()
+        N = points.shape[0]
+        device = points.device
+
+        # 1️⃣ 单位向量化
+        unit_vecs = F.normalize(vectors, dim=1)  # (N, 2)
+
+        # 2️⃣ 为每个点生成 k 个邻居 (N, k, 2)
+        neighbor_points = points.unsqueeze(1) + torch.randn(N, k, 2, device=device) * noise_std
+
+        # 3️⃣ 邻居处向量
+        neighbors_vecs = self.tangent_net(neighbor_points.view(-1, 2)).view(N, k, -1)
+        neighbors_vecs = F.normalize(neighbors_vecs, dim=-1)
+
+        # 4️⃣ 方向一致性损失
+        cos_sim = F.cosine_similarity(unit_vecs.unsqueeze(1), neighbors_vecs, dim=-1)
+        loss_dir = 1 - cos_sim.mean()
+
+        # 5️⃣ 梯度约束（抑制源/汇）
+        delta_pos = neighbor_points - points.unsqueeze(1)       # (N, k, 2)
+        delta_vec = neighbors_vecs - unit_vecs.unsqueeze(1)     # (N, k, 2)
+        # 有源/有汇 → 散度不为0，使用有限差分估计散度
+        div_est = (delta_vec * delta_pos).sum(-1) / (delta_pos.norm(dim=-1)**2 + 1e-8)  # (N, k)
+        loss_div = (div_est**2).mean()
+
+        # 6️⃣ 总损失
+        loss = loss_dir + lambda_div * loss_div
+
         return loss
+
     
     def compute_divergence(self, x, m_field):
         """
@@ -255,7 +296,7 @@ class TangentNetTrainer:
         m_field = s_theta + v_phi
 
         # 4️⃣ 单位长度约束
-        m_norm = torch.norm(m_field, dim=1) + 1e-8
+        m_norm = torch.norm(v_phi, dim=1) + 1e-8
         loss_unit = ((m_norm - 1.0) ** 2).mean()
 
         # 5️⃣ 正交约束
@@ -264,8 +305,8 @@ class TangentNetTrainer:
         loss_orth = (torch.sum(s_norm * v_norm, dim=1) ** 2).mean()
 
         # 6️⃣ 方向一致性
-        loss_dir = self.compute_directional_consistency_loss(x, m_field)
-
+        loss_dir = self.compute_directional_consistency_loss(x, v_phi,lambda_div=0.)
+    
         # 7️⃣ 总损失
         total_loss = (self.lambda_unit * loss_unit +
               self.lambda_orth * loss_orth +

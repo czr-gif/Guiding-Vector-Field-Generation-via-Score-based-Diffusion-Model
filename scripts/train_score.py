@@ -8,7 +8,7 @@ import torch
 import torch.distributions as D
 from core.schedules import *
 from core.paths import GaussianConditionalProbabilityPath, LinearConditionalProbabilityPath, UniformProbabilityPath
-from core.base_distributions import GaussianMixture,Gaussian,  MoonsSampleable, CirclesSampleable, UniformBox, SingleCircleSampleable, InputdataSampleable,TwoTrianglesSampleable
+from core.base_distributions import GaussianMixture,Gaussian,  MoonsSampleable, CirclesSampleable, UniformBox, SingleCircleSampleable, InputdataSampleable,TwoPolygonsSampleable,TwoCirclesSampleable, SquareSampleable, Star5Sampleable
 from utils.plotting import *
 from core.dynamics import ConditionalVectorFieldODE, ConditionalVectorFieldSDE, LearnedVectorFieldODE
 from core.simulators import EulerSimulator,EulerMaruyamaSimulator, record_every
@@ -17,7 +17,7 @@ import os
 from utils.device import get_device
 device = get_device()
 
-taskname = 'Triangles'
+taskname = 'Square'
 
 dirs_to_create = [
     os.path.join("saved_model", taskname),
@@ -47,8 +47,14 @@ if taskname == 'westlake':
     np_points = np.load('utils/westlake_edges.npy')
     points_tensor = torch.tensor(np_points, dtype=torch.float32)
     p_data = InputdataSampleable(device=device, points=points_tensor, shuffle=True, bound=4.0)
-if taskname == 'Triangles':
-    p_data = TwoTrianglesSampleable(device=device)
+if taskname == 'Polygon':
+    p_data = TwoPolygonsSampleable(device=device)
+if taskname == 'SperatedCircles':
+    p_data = TwoCirclesSampleable(device=device)
+if taskname == 'Square':
+    p_data = SquareSampleable(device=device)
+if taskname == 'Star5':
+    p_data = Star5Sampleable(device=device)
 
 # Construct conditional probability path
 path = UniformProbabilityPath(

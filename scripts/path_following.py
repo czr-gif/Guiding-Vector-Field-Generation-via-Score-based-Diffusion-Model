@@ -9,7 +9,7 @@ from typing import Callable
 from utils.device import get_device
 device = get_device()
 
-taskname = 'Triangles'
+taskname =  'Square'
 
 
 ################################
@@ -38,7 +38,8 @@ def integrate_fields(
     lam: float,
     dt: float,
     steps: int,
-    device: torch.device
+    device: torch.device,
+    momentum: float = 0.0 # 动量系数
 ) -> np.ndarray:
     """
     Integrate a trajectory using a mixture of score-based and tangent vector fields.
@@ -57,7 +58,7 @@ def integrate_fields(
     """
     x = x0.clone().to(device)
     traj = [x.clone()]
-
+    v_prev = torch.zeros_like(x)  # 初始化动量为零
     with torch.no_grad():
         for _ in range(steps):
             t = torch.ones((1, 1), device=device)
@@ -76,7 +77,12 @@ def integrate_fields(
             u = u / torch.norm(u, dim=1, keepdim=True)
 
             # 更新
-            x = x + dt * u
+            # x = x + dt * u
+            # 动量更新
+            v_prev = momentum * v_prev + (1 - momentum) * u
+
+            # 更新位置
+            x = x + dt * v_prev 
             traj.append(x.clone())
     print(type(traj))
     traj = torch.stack([t.cpu() for t in traj]).numpy().reshape(-1, 2)

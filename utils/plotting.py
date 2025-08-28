@@ -110,7 +110,7 @@ def plot_tangent_vector_field(tangent_model, x_bounds, y_bounds, device='cuda',
     # 2. 模型输出
     with torch.no_grad():
         vectors = tangent_model(points).detach().cpu()
-        vectors = vectors * 0.3
+        vectors = vectors * 0.4
 
     U = vectors[:, 0].reshape(num_grid, num_grid)
     V = vectors[:, 1].reshape(num_grid, num_grid)
