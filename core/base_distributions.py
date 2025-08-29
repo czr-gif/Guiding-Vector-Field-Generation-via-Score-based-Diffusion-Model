@@ -258,6 +258,18 @@ class CirclesSampleable(Sampleable):
             random_state=None
         )
         return self.scale * torch.from_numpy(samples.astype(np.float32)).to(self.device) + self.offset
+    def log_density(self, x: torch.Tensor, sigma: float = 0.1) -> torch.Tensor:
+        """
+        Smooth log-density of two concentric circles using Gaussian radial kernel.
+        """
+        r1 = self.scale * 0.5
+        r2 = self.scale * 1.0
+        dist = torch.norm(x - self.offset, dim=1)
+        logp1 = -((dist - r1)**2) / (2*sigma**2)
+        logp2 = -((dist - r2)**2) / (2*sigma**2)
+        # logsumexp 保持连续性
+        logp = torch.log(torch.exp(logp1) + torch.exp(logp2))
+        return logp.unsqueeze(-1)  # 保持 (N,1) 形状
     
 class SingleCircleSampleable(Sampleable):
     """

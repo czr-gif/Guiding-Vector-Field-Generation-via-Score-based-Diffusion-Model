@@ -59,7 +59,7 @@ tangent_model.save('saved_model/' + taskname + '/tangent.pth')
 plot_losses(losses, taskname , title="Tangent Network Training Loss", save=True, smooth=True, method="ema", alpha=0.95)
 
 ################################
-# 可视化tangent向量场
+# 可视化tangent向量场 
 ################################
 x_bounds = [-scale,scale]
 y_bounds = [-scale,scale]
