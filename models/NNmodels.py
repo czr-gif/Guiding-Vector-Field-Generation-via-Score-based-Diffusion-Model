@@ -296,7 +296,7 @@ class TangentNetTrainer:
         m_field = s_theta + v_phi
 
         # 4️⃣ 单位长度约束
-        m_norm = torch.norm(v_phi, dim=1) + 1e-8
+        m_norm = torch.norm(m_field, dim=1) + 1e-8
         loss_unit = ((m_norm - 1.0) ** 2).mean()
 
         # 5️⃣ 正交约束

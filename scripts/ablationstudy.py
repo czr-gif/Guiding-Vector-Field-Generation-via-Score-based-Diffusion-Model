@@ -16,8 +16,8 @@ from models.NNmodels import MLPScore , ConditionalScoreMatchingTrainer, TangentN
 from utils.device import get_device
 device = get_device()
 
-taskname = 'Octagon'
-
+taskname = 'doublecircles'
+savename = 'ablation'
 ################################
 # 初始化模型
 ################################
@@ -31,7 +31,7 @@ score_model.eval()
 
 tangent_model = TangentNet(hidden=128)
 trainer = TangentNetTrainer(tangent_model, score_model, k=5, lr=1e-3, device=device,
-                 lambda_unit=1.0, lambda_orth=1.0, lambda_dir=1.0)
+                 lambda_unit=1.0, lambda_orth=1.0, lambda_dir=0.0)
 
 ################################
 # 训练 tangent 网络
@@ -55,8 +55,8 @@ for step in range(1, num_steps + 1):
     #         'optimizer_state': trainer.optimizer.state_dict(),  # 保存优化器
     #     }, f"checkpoint_step_{step}.pth")
 
-tangent_model.save('saved_model/' + taskname + '/tangent.pth')
-plot_losses(losses, taskname , title="Tangent Network Training Loss", save=True, smooth=True, method="ema", alpha=0.95)
+# tangent_model.save('saved_model/' + taskname + '/tangent.pth')
+# plot_losses(losses, taskname , title="Tangent Network Training Loss", save=True, smooth=True, method="ema", alpha=0.95)
 
 ################################
 # 可视化tangent向量场 
@@ -72,11 +72,11 @@ plot_tangent_vector_field(tangent_model, x_bounds=x_bounds, y_bounds=y_bounds, d
 # scatter_sampleable(p_data, num_samples=1000, ax=ax, color='blue', alpha=0.5, label='$p_{data}$')
 
 # 3. 整理图像格式
-ax.set_title("Trained Tangent Vector Field for " + taskname, fontsize=16)
+ax.set_title("Tangent Field Without Directional Consistency Loss ", fontsize=16)
 # ax.legend(fontsize=legend_size, markerscale=markerscale)
 ax.set_xlim(x_bounds)
 ax.set_ylim(y_bounds)
 ax.grid(True)
-plt.savefig('saved_figure/' + taskname + '/tangent.pdf', format = 'pdf', dpi=300)
+plt.savefig('saved_figure/' + savename + '/Directional Consistency Loss.pdf', format = 'pdf', dpi=300)
 plt.tight_layout()
 plt.show()

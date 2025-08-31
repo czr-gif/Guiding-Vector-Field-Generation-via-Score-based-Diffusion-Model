@@ -8,7 +8,7 @@ import torch
 import torch.distributions as D
 from core.schedules import *
 from core.paths import GaussianConditionalProbabilityPath, LinearConditionalProbabilityPath, UniformProbabilityPath
-from core.base_distributions import GaussianMixture,Gaussian,  MoonsSampleable, CirclesSampleable, UniformBox, SingleCircleSampleable, InputdataSampleable,TwoPolygonsSampleable,TwoCirclesSampleable, SquareSampleable, Star5Sampleable
+from core.base_distributions import GaussianMixture,Gaussian,  MoonsSampleable, CirclesSampleable, UniformBox, SingleCircleSampleable, InputdataSampleable,TwoPolygonsSampleable,TwoCirclesSampleable, SquareSampleable, Star5Sampleable, HexagonSampleable, OctagonSampleable
 from utils.plotting import *
 from core.dynamics import ConditionalVectorFieldODE, ConditionalVectorFieldSDE, LearnedVectorFieldODE
 from core.simulators import EulerSimulator,EulerMaruyamaSimulator, record_every
@@ -17,7 +17,7 @@ import os
 from utils.device import get_device
 device = get_device()
 
-taskname = 'Square'
+taskname = 'Octagon'
 
 dirs_to_create = [
     os.path.join("saved_model", taskname),
@@ -55,6 +55,10 @@ if taskname == 'Square':
     p_data = SquareSampleable(device=device)
 if taskname == 'Star5':
     p_data = Star5Sampleable(device=device)
+if taskname == 'Hexagon':
+    p_data = HexagonSampleable(device=device)
+if taskname == 'Octagon':
+    p_data = OctagonSampleable(device=device)
 
 # Construct conditional probability path
 path = UniformProbabilityPath(

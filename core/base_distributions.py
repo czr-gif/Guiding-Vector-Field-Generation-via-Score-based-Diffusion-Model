@@ -564,6 +564,125 @@ class SquareSampleable(Sampleable):
             samples = samples + noise
 
         return samples
+    
+class HexagonSampleable(Sampleable):
+    """
+    Uniform sampling along the edges of a regular hexagon in 2D, without interior points.
+    """
+    def __init__(self, device: torch.device, shuffle: bool = True, noise_std: float = 0.0, radius: float = 3.0):
+        """
+        Args:
+            device: torch device
+            shuffle: whether to shuffle the sampled points
+            noise_std: Gaussian noise standard deviation
+            radius: distance from hexagon center to vertices
+        """
+        self.device = device
+        self.shuffle = shuffle
+        self.noise_std = noise_std
+        self.radius = radius
+
+        # 生成正六边形顶点，逆时针顺序
+        n_vertices = 6
+        angles = torch.arange(n_vertices, device=device) * (2 * torch.pi / n_vertices)
+
+        self.hexagon = torch.stack([radius * torch.cos(angles), radius * torch.sin(angles)], dim=1)
+
+    @property
+    def dim(self) -> int:
+        return 2
+
+    def sample_hexagon_edges(self, points_per_edge: int) -> torch.Tensor:
+        n = self.hexagon.shape[0]
+        samples_list = []
+        for i in range(n):
+            p0, p1 = self.hexagon[i], self.hexagon[(i + 1) % n]
+            t = torch.linspace(0, 1, points_per_edge, device=self.device).unsqueeze(1)
+            edge_samples = (1 - t) * p0 + t * p1
+            samples_list.append(edge_samples)
+        return torch.cat(samples_list, dim=0)
+
+    def sample(self, num_samples: int) -> torch.Tensor:
+        points_per_edge = max(1, num_samples // 6)
+        samples = self.sample_hexagon_edges(points_per_edge)
+
+        # 如果样本数量不足或过多，裁剪或重复
+        if samples.shape[0] > num_samples:
+            indices = torch.randperm(samples.shape[0], device=self.device)[:num_samples]
+            samples = samples[indices]
+        elif samples.shape[0] < num_samples:
+            repeat = (num_samples + samples.shape[0] - 1) // samples.shape[0]
+            samples = samples.repeat(repeat, 1)[:num_samples]
+
+        if self.shuffle:
+            indices = torch.randperm(samples.shape[0], device=self.device)
+            samples = samples[indices]
+
+        if self.noise_std > 0:
+            noise = torch.randn_like(samples) * self.noise_std
+            samples = samples + noise
+
+        return samples
+    
+class OctagonSampleable(Sampleable):
+    """
+    Uniform sampling along the edges of a regular octagon in 2D, without interior points.
+    """
+    def __init__(self, device: torch.device, shuffle: bool = True, noise_std: float = 0.0, radius: float = 3.0):
+        """
+        Args:
+            device: torch device
+            shuffle: whether to shuffle the sampled points
+            noise_std: Gaussian noise standard deviation
+            radius: distance from octagon center to vertices
+        """
+        self.device = device
+        self.shuffle = shuffle
+        self.noise_std = noise_std
+        self.radius = radius
+
+        # 生成正八边形顶点，逆时针顺序
+        n_vertices = 8
+        angles = torch.arange(n_vertices, device=device) * (2 * torch.pi / n_vertices)
+        self.octagon = torch.stack([radius * torch.cos(angles), radius * torch.sin(angles)], dim=1)
+
+    @property
+    def dim(self) -> int:
+        return 2
+
+    def sample_octagon_edges(self, points_per_edge: int) -> torch.Tensor:
+        n = self.octagon.shape[0]
+        samples_list = []
+        for i in range(n):
+            p0, p1 = self.octagon[i], self.octagon[(i + 1) % n]
+            t = torch.linspace(0, 1, points_per_edge, device=self.device).unsqueeze(1)
+            edge_samples = (1 - t) * p0 + t * p1
+            samples_list.append(edge_samples)
+        return torch.cat(samples_list, dim=0)
+
+    def sample(self, num_samples: int) -> torch.Tensor:
+        points_per_edge = max(1, num_samples // 8)
+        samples = self.sample_octagon_edges(points_per_edge)
+
+        # 样本数量不足或过多，裁剪或重复
+        if samples.shape[0] > num_samples:
+            indices = torch.randperm(samples.shape[0], device=self.device)[:num_samples]
+            samples = samples[indices]
+        elif samples.shape[0] < num_samples:
+            repeat = (num_samples + samples.shape[0] - 1) // samples.shape[0]
+            samples = samples.repeat(repeat, 1)[:num_samples]
+
+        if self.shuffle:
+            indices = torch.randperm(samples.shape[0], device=self.device)
+            samples = samples[indices]
+
+        if self.noise_std > 0:
+            noise = torch.randn_like(samples) * self.noise_std
+            samples = samples + noise
+
+        return samples
+
+
 
 class Star5Sampleable(Sampleable):
     """

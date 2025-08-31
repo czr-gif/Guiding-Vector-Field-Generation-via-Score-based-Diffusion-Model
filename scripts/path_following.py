@@ -5,12 +5,18 @@ import torch
 from core.schedules import *
 from utils.plotting import *
 from models.NNmodels import MLPScore, TangentNet
+from core.base_distributions import GaussianMixture,Gaussian,  MoonsSampleable, CirclesSampleable, UniformBox, SingleCircleSampleable, InputdataSampleable,TwoPolygonsSampleable,TwoCirclesSampleable, SquareSampleable, Star5Sampleable, HexagonSampleable, OctagonSampleable
 from typing import Callable
 from utils.device import get_device
 device = get_device()
 
-taskname =  'Square'
-
+taskname =  'Hexagon'
+if taskname == 'Square':
+    p_data = SquareSampleable(device=device)
+if taskname == 'Hexagon':
+    p_data = HexagonSampleable(device=device)
+if taskname == 'Octagon':
+    p_data = OctagonSampleable(device=device)
 
 ################################
 # 初始化模型
@@ -126,8 +132,8 @@ combo_grid = score_grid + tangent_grid
 U = combo_grid[:, 0].cpu().detach().numpy()
 V = combo_grid[:, 1].cpu().detach().numpy()
 
-plt.figure(figsize=(7, 7))
-
+fig, ax = plt.subplots(figsize=(7,7))
+scatter_sampleable(p_data, num_samples=100, ax=ax, color='black', alpha=0.8, label='$p_{data}$')
 # 绘制矢量场
 plt.quiver(X, Y, U.reshape(X.shape), V.reshape(Y.shape), color='gray', alpha=0.5)
 
