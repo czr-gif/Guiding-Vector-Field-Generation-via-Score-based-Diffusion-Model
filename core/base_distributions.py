@@ -465,8 +465,8 @@ class TwoCirclesSampleable(Sampleable):
         self.shuffle = shuffle
         self.noise_std = noise_std
         # 两个圆的圆心和半径
-        self.centers = torch.tensor([[2.0, 0.0], [-2.0, 0.0]], device=device)
-        self.radius = 1.5
+        self.centers = torch.tensor([[-1.0, 1.0], [1.0, -1.0]], device=device)
+        self.radius = 1
 
     @property
     def dim(self) -> int:

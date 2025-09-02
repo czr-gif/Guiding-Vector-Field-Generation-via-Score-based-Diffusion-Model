@@ -10,13 +10,17 @@ from typing import Callable
 from utils.device import get_device
 device = get_device()
 
-taskname =  'Hexagon'
+taskname =  'experiment2'
 if taskname == 'Square':
     p_data = SquareSampleable(device=device)
 if taskname == 'Hexagon':
     p_data = HexagonSampleable(device=device)
 if taskname == 'Octagon':
     p_data = OctagonSampleable(device=device)
+if taskname == 'experiment1':
+    p_data = CirclesSampleable(device = device,scale=2)
+if taskname == 'experiment2':
+    p_data = TwoCirclesSampleable(device=device)
 
 ################################
 # 初始化模型
@@ -96,7 +100,7 @@ def integrate_fields(
 
 
 x0_list = [torch.tensor([[4.0, -4.0]], dtype=torch.float32),
-           torch.tensor([[-4.5, 0.0]], dtype=torch.float32)]
+           torch.tensor([[-4.0, 4.0]], dtype=torch.float32)]
 
 traj_list = []
 
@@ -107,7 +111,7 @@ for x0 in x0_list:
         tangent_model=tangent_model,
         lam=0.5,
         dt=0.01,
-        steps=4000,
+        steps=5000,
         device=device
     )
     traj_list.append(traj)
@@ -141,7 +145,7 @@ colors = ['red', 'blue']
 markers = ['o', 's']  # 起点不同标记
 for i, traj in enumerate(traj_list):
     # 轨迹线
-    plt.plot(traj[:, 0], traj[:, 1], color=colors[i], linewidth=2.5, label=f'Agent {i+1} Trajectory')
+    plt.plot(traj[:, 0], traj[:, 1], color=colors[i], linewidth=2.5,alpha=0.8, label=f'Agent {i+1} Trajectory')
     # 起点标记
     plt.scatter(traj[0, 0], traj[0, 1], c=colors[i], edgecolors='black',
                 s=120, marker=markers[i], label=f'Agent {i+1} Start')

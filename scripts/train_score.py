@@ -17,7 +17,7 @@ import os
 from utils.device import get_device
 device = get_device()
 
-taskname = 'Octagon'
+taskname = 'experiment2'
 
 dirs_to_create = [
     os.path.join("saved_model", taskname),
@@ -59,6 +59,10 @@ if taskname == 'Hexagon':
     p_data = HexagonSampleable(device=device)
 if taskname == 'Octagon':
     p_data = OctagonSampleable(device=device)
+if taskname == 'experiment1':
+    p_data = CirclesSampleable(device = device,scale=2)
+if taskname == 'experiment2':
+    p_data = TwoCirclesSampleable(device=device)
 
 # Construct conditional probability path
 path = UniformProbabilityPath(
@@ -74,7 +78,7 @@ trainer = ConditionalScoreMatchingTrainer(path, score_model)
 losses = trainer.train(num_epochs=10000, device=device, lr=1e-3, batch_size=1000)
 score_model.save('saved_model/' + taskname + '/score.pth')
 # score_model.load('saved_model/' + taskname + '/score.pth')
-plot_losses(losses, taskname , title="Score Network Training Loss", save=True, smooth=True, method="ema", alpha=0.95)
+# plot_losses(losses, taskname , title="Score Network Training Loss", save=True, smooth=True, method="ema", alpha=0.95)
 #######################
 # Change these values #
 #######################

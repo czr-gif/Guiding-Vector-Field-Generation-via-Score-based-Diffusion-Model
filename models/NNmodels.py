@@ -98,16 +98,12 @@ class ScoreFromVectorField(torch.nn.Module):
         return score
 
 class TangentNet(torch.nn.Module):
-    def __init__(self, hidden=32):
+    def __init__(self, hiddens: List[int], activation: Type[torch.nn.Module] = torch.nn.SiLU):
         super().__init__()
-        self.hidden = hidden
-        self.net = torch.nn.Sequential(
-            torch.nn.Linear(2, hidden),
-            torch.nn.ReLU(),
-            torch.nn.Linear(hidden, hidden),
-            torch.nn.ReLU(),
-            torch.nn.Linear(hidden, 2)  # 直接输出 (vx, vy)
-        )
+        self.hiddens = hiddens
+        self.activation = activation
+        # 输入是2D坐标，输出是2D向量
+        self.net = build_mlp([2] + hiddens + [2], activation=activation)
 
     def forward(self, x):
         """
@@ -119,13 +115,16 @@ class TangentNet(torch.nn.Module):
     def save(self, path: str):
         torch.save({
             'state_dict': self.state_dict(),
-            'hidden': self.hidden
+            'hiddens': self.hiddens,
+            'activation': self.activation.__name__  # 存成字符串方便复现
         }, path)
 
     @classmethod
     def load(cls, path: str, map_location=None):
         checkpoint = torch.load(path, map_location=map_location)
-        model = cls(hidden=checkpoint['hidden'])
+        # 根据存的 activation 名称反射出类
+        act_cls = getattr(torch.nn, checkpoint.get('activation', 'SiLU'))
+        model = cls(hiddens=checkpoint['hiddens'], activation=act_cls)
         model.load_state_dict(checkpoint['state_dict'])
         model.eval()
         return model

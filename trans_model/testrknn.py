@@ -3,7 +3,7 @@ import onnxruntime as ort
 from matplotlib import pyplot as plt
 
 # ONNX 模型路径
-taskname = "doublecircles"
+taskname = "experiment1"
 score_onnx_path = f"trans_model/{taskname}/score.onnx"
 tangent_onnx_path = f"trans_model/{taskname}/tangent.onnx"
 

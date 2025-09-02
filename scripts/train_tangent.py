@@ -16,7 +16,7 @@ from models.NNmodels import MLPScore , ConditionalScoreMatchingTrainer, TangentN
 from utils.device import get_device
 device = get_device()
 
-taskname = 'Octagon'
+taskname = 'experiment2'
 
 ################################
 # 初始化模型
@@ -29,7 +29,7 @@ score_model.load_state_dict(state)
 score_model.to(device)
 score_model.eval()
 
-tangent_model = TangentNet(hidden=128)
+tangent_model = TangentNet(hiddens=[64, 64, 64, 64])
 trainer = TangentNetTrainer(tangent_model, score_model, k=5, lr=1e-3, device=device,
                  lambda_unit=1.0, lambda_orth=1.0, lambda_dir=1.0)
 
@@ -39,11 +39,15 @@ trainer = TangentNetTrainer(tangent_model, score_model, k=5, lr=1e-3, device=dev
 num_steps = 10000
 batch_size = 512 
 scale = PARAMS["scale"]
-losses = []
+loss_total, loss_unit, loss_orth, loss_dir = [], [], [], []
 for step in range(1, num_steps + 1):
     x = torch.empty(batch_size, 2).uniform_(-scale, scale).to(device)
     loss, lu, lo, ld = trainer.train_step(x)
-    losses.append(loss)
+    # 记录每个 loss
+    loss_total.append(loss)
+    loss_unit.append(lu)
+    loss_orth.append(lo)
+    loss_dir.append(ld)
     if step % 100 == 0:
         print(f"[{step}] loss={loss:.4f} unit={lu:.4f} orth={lo:.4f} dir={ld:.16f}")
 
@@ -56,7 +60,14 @@ for step in range(1, num_steps + 1):
     #     }, f"checkpoint_step_{step}.pth")
 
 tangent_model.save('saved_model/' + taskname + '/tangent.pth')
-plot_losses(losses, taskname , title="Tangent Network Training Loss", save=True, smooth=True, method="ema", alpha=0.95)
+plot_losses([loss_total, loss_unit, loss_orth, loss_dir],
+            taskname,
+            title="Tangent Network Training Loss",
+            save=True,
+            smooth=True,
+            method="ema",
+            alpha=0.95,
+            labels=["Total", "Unit", "Orthogonal", "Direction"])
 
 ################################
 # 可视化tangent向量场 

@@ -160,7 +160,7 @@ def smooth_curve(values, method="ema", window=10, alpha=0.9):
         return values  # 不平滑
 
 def plot_losses(losses, taskname, title="Training Loss", save=True,
-                smooth=False, method="ema", window=10, alpha=0.9):
+                smooth=False, method="ema", window=10, alpha=0.9,labels=None):
     """
     绘制并可选择保存 loss 曲线（PDF 矢量图）。
 
@@ -174,7 +174,10 @@ def plot_losses(losses, taskname, title="Training Loss", save=True,
         losses = smooth_curve(losses, method=method, window=window, alpha=alpha)
     # 绘制曲线
     plt.figure(figsize=(6, 4))
-    plt.plot(losses, label='Training Loss', color='blue', linewidth=2)
+    for i, l in enumerate(losses):
+        label = labels[i] if labels and i < len(labels) else f'Loss {i+1}'
+        plt.plot(l, label=label, linewidth=2)
+
     plt.xlabel("Epoch", fontsize=12)
     plt.ylabel("Loss", fontsize=12)
     plt.title(title, fontsize=14)
