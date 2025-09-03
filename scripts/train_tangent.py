@@ -22,14 +22,14 @@ taskname = 'experiment2'
 # 初始化模型
 ################################
 # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-PARAMS = {"scale": 5.0}
+PARAMS = {"scale": 3.0}
 score_model = MLPScore(dim=2, hiddens=[64, 64, 64, 64])
 state = torch.load('saved_model/' + taskname + '/score.pth', map_location=device)
 score_model.load_state_dict(state)
 score_model.to(device)
 score_model.eval()
 
-tangent_model = TangentNet(hiddens=[64, 64, 64, 64])
+tangent_model = TangentNet(hiddens=[32,32,32,32])
 trainer = TangentNetTrainer(tangent_model, score_model, k=5, lr=1e-3, device=device,
                  lambda_unit=1.0, lambda_orth=1.0, lambda_dir=1.0)
 
