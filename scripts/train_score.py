@@ -75,7 +75,7 @@ path = UniformProbabilityPath(
 score_model = MLPScore(dim=2, hiddens=[64,64,64,64]).to(device)
 # Construct trainer
 trainer = ConditionalScoreMatchingTrainer(path, score_model)
-losses = trainer.train(num_epochs=10000, device=device, lr=1e-3, batch_size=1000)
+losses = trainer.train(num_epochs=10000, device=device, lr=1e-3, batch_size=512)
 score_model.save('saved_model/' + taskname + '/score.pth')
 # score_model.load('saved_model/' + taskname + '/score.pth')
 # plot_losses(losses, taskname , title="Score Network Training Loss", save=True, smooth=True, method="ema", alpha=0.95)

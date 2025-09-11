@@ -209,7 +209,7 @@ class TangentNetTrainer:
         缩放 score 场向量到可视化大小
         """
         norms = torch.norm(s_theta, dim=1, keepdim=True) + 1e-8
-        sc = torch.tanh(0.2 * norms)
+        sc = torch.tanh(0.3 * norms)
         return s_theta / norms * sc
 
     # def compute_directional_consistency_loss(self, points: torch.Tensor, vectors: torch.Tensor):

@@ -80,7 +80,7 @@ def plot_drift_vector_field(ode_model, x_bounds, y_bounds, device='cuda',
     with torch.no_grad():
         vectors = ode_model.drift_coefficient(points, t_fixed).detach().cpu()
         norms = torch.norm(vectors, dim=1, keepdim=True) + 1e-8
-        sc = torch.tanh(0.2*norms)
+        sc = torch.tanh(0.3*norms)
         vectors = vectors / norms * sc * 0.3
 
     U = vectors[:, 0].reshape(num_grid, num_grid)

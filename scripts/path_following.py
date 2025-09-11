@@ -76,7 +76,7 @@ def integrate_fields(
             # score 场
             s_theta = score_model(x, t)
             norms = torch.norm(s_theta, dim=1, keepdim=True) + 1e-8
-            sc = torch.tanh(0.2 * norms)
+            sc = torch.tanh(0.3 * norms)
             s_theta = s_theta / norms * sc
 
             # tangent 场
