@@ -17,7 +17,7 @@ import os
 from utils.device import get_device
 device = get_device()
 
-taskname = 'experiment2'
+taskname = 'experiment1'
 
 dirs_to_create = [
     os.path.join("saved_model", taskname),
@@ -32,7 +32,7 @@ for directory in dirs_to_create:
         print(f"Directory already exists: {directory}")
 
 PARAMS = {
-    "scale": 5.0,
+    "scale": 3.0,
     "target_scale": 10.0,
     "target_std": 1.0,
 }

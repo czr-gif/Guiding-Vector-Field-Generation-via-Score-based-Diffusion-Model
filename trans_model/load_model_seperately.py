@@ -5,7 +5,7 @@ from models.NNmodels import MLPScore , ConditionalScoreMatchingTrainer, TangentN
 # from rknn.api import RKNN
 
 device = 'cpu'
-taskname = 'experiment2'
+taskname = 'experiment1'
 state_dims = []
 action_dims = []
 

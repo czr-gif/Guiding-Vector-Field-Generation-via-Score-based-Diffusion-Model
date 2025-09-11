@@ -10,7 +10,7 @@ from typing import Callable
 from utils.device import get_device
 device = get_device()
 
-taskname =  'experiment2'
+taskname =  'experiment1'
 if taskname == 'Square':
     p_data = SquareSampleable(device=device)
 if taskname == 'Hexagon':
@@ -26,7 +26,7 @@ if taskname == 'experiment2':
 # 初始化模型
 ################################
 # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-PARAMS = {"scale": 5.0}
+PARAMS = {"scale": 3.0}
 score_model = MLPScore(dim=2, hiddens=[64, 64, 64, 64])
 state = torch.load('saved_model/' + taskname + '/score.pth', map_location=device)
 score_model.load_state_dict(state)
@@ -99,8 +99,8 @@ def integrate_fields(
     return traj
 
 
-x0_list = [torch.tensor([[4.0, -4.0]], dtype=torch.float32),
-           torch.tensor([[-4.0, 4.0]], dtype=torch.float32)]
+x0_list = [torch.tensor([[0.0, 0.0]], dtype=torch.float32),
+           torch.tensor([[2.5, 2.5]], dtype=torch.float32)]
 
 traj_list = []
 

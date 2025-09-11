@@ -68,7 +68,7 @@ def export(taskname: str, modelname: str):
 
 
 if __name__=='__main__':
-    tasknames = ["experiment1","experiment2"]
+    tasknames = ["experiment1"]
     modelnames = ["score", "tangent"]
 
     for task in tasknames:

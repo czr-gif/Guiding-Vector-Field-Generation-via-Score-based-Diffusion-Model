@@ -16,7 +16,7 @@ from models.NNmodels import MLPScore , ConditionalScoreMatchingTrainer, TangentN
 from utils.device import get_device
 device = get_device()
 
-taskname = 'experiment2'
+taskname = 'experiment1'
 
 ################################
 # 初始化模型
