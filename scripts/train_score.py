@@ -60,7 +60,7 @@ if taskname == 'Hexagon':
 if taskname == 'Octagon':
     p_data = OctagonSampleable(device=device)
 if taskname == 'experiment1':
-    p_data = CirclesSampleable(device = device,scale=2)
+    p_data = CirclesSampleable(device = device,scale=2,noise=0.0)
 if taskname == 'experiment2':
     p_data = TwoCirclesSampleable(device=device)
 
