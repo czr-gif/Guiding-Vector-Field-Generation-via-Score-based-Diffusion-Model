@@ -12,7 +12,7 @@ This is the official PyTorch implementation for the **ICRA 2026** paper:
 ---
 
 ## 📢 News
-* **[2026-02-21]** 📄 The camera-ready version has been submitted!
+* **[2026-02-21]** 📄 The camera-ready version has been submitted! Full paper is available at https://www.researchgate.net/publication/401018693_Guiding_Vector_Field_Generation_via_Score-based_Diffusion_Model
 * **[2026-02-01]** 🎉 Our paper has been accepted by **ICRA 2026**!
 * **[2026-02-01]** Code released.
 
