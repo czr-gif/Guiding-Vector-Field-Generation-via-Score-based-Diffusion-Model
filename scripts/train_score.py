@@ -43,18 +43,12 @@ if taskname == 'circle':
     # p_data = sampler.sample(500)
 if taskname == 'doublecircles':
     p_data = CirclesSampleable(device)
-if taskname == 'westlake':
-    np_points = np.load('utils/westlake_edges.npy')
-    points_tensor = torch.tensor(np_points, dtype=torch.float32)
-    p_data = InputdataSampleable(device=device, points=points_tensor, shuffle=True, bound=4.0)
 if taskname == 'Polygon':
     p_data = TwoPolygonsSampleable(device=device)
 if taskname == 'SperatedCircles':
     p_data = TwoCirclesSampleable(device=device)
 if taskname == 'Square':
     p_data = SquareSampleable(device=device)
-if taskname == 'Star5':
-    p_data = Star5Sampleable(device=device)
 if taskname == 'Hexagon':
     p_data = HexagonSampleable(device=device)
 if taskname == 'Octagon':

@@ -17,7 +17,7 @@ from utils.device import get_device
 device = get_device()
 
 ################################
-# 初始化模型
+# model init
 ################################
 # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 PARAMS = {"scale": 5.0}
@@ -31,7 +31,7 @@ tangent_model = TangentNet.load('circletangent.pth', map_location=device)
 tangent_model.to(device)
 
 ################################
-# 可视化tangent向量场
+# draw tangent vector field
 ################################
 plot_drift_and_tangent_fields(
     ode_model=LearnedVectorFieldODE(score_model),
